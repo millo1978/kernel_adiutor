@@ -1,0 +1,9 @@
+<application>
+  <component name="ParameterNameHintsSettings">
+    <blacklists>
+      <blacklist language="Java">
+        <added pattern="com.kerneladiutormod.reborn.utils.root.Control.runCommand(value,file,command,context)" />
+      </blacklist>
+    </blacklists>
+  </component>
+</application>
