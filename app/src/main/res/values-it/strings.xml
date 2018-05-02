@@ -1000,5 +1000,7 @@
     <string name="accessibility_service_label">KA Per App Monitor</string>
     <string name="accessibility_service_desc">Service to monitor when foreground app changes for per-app profile loading</string>
     <string name="selinux_tile">SELinux</string>
-
+    <string name="tile_label">SELinux:</string>
+    <string name="service_active">Enforcing</string>
+    <string name="service_inactive">Permissive</string>
 </resources>
