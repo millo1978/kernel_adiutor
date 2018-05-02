@@ -2,83 +2,117 @@ package com.kerneladiutormod.reborn.services;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.drawable.Icon;
 import android.os.Build;
 import android.service.quicksettings.Tile;
 import android.service.quicksettings.TileService;
-import android.support.annotation.RequiresApi;
-
+import android.util.Log;
 import com.kerneladiutormod.reborn.R;
+import com.kerneladiutormod.reborn.utils.Constants;
 import com.kerneladiutormod.reborn.utils.root.Control;
+import java.util.Locale;
 
 import static com.kerneladiutormod.reborn.utils.Constants.SETENFORCE;
-import static com.kerneladiutormod.reborn.utils.kernel.Misc.isSELinuxActive;
 
-@RequiresApi(api = Build.VERSION_CODES.N)
+@TargetApi(Build.VERSION_CODES.N)
 public class SELinuxQSTileService extends TileService {
 
-    private Context context;
+    private static final String SERVICE_STATUS_FLAG = "serviceStatus";
+    private static final String PREFERENCES_KEY = "com.google.android_quick_settings";
+    protected Context context;
 
-    @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
     public void onTileAdded() {
-        tileSELinuxUpdate(getQsTile());
+        Log.d("QS", "SELinux - Tile added");
+        tileSELinuxUpdate();
     }
 
     @Override
     public void onTileRemoved() {
+        Log.d("QS", "SELinux - Tile removed");
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
     public void onClick() {
-        tileSELinuxToggle(getQsTile());
+        Log.d("QS", "SELinux - Tile tapped");
+        tileSELinuxUpdate();
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
     public void onStartListening () {
-        tileSELinuxUpdate(getQsTile());
+        Log.d("QS", "SELinux - Start listening");
+        tileSELinuxUpdate();
     }
 
     @Override
     public void onStopListening () {
-
-    }
-    @TargetApi(Build.VERSION_CODES.N)
-    private void tileSELinuxUpdate (Tile qsTile) {
-        Icon icon =  Icon.createWithResource(getApplicationContext(), R.drawable.ic_selinux);
-        if (isSELinuxActive()) {
-            if (qsTile.getState() == Tile.STATE_INACTIVE) {
-                qsTile.setState(Tile.STATE_ACTIVE);
-            }
-        } 
-        if (!isSELinuxActive()) {
-            if (qsTile.getState() == Tile.STATE_ACTIVE) {
-                qsTile.setState(Tile.STATE_INACTIVE);
-            }
-        }
-        getQsTile().setIcon(icon);
-        getQsTile().updateTile();
+        Log.d("QS", "SELinux - Stop Listening");
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.N)
-    private void tileSELinuxToggle (Tile qsTile) {
-        if (isSELinuxActive() && qsTile.getState() == Tile.STATE_ACTIVE) {
+
+
+    private void tileSELinuxUpdate () {
+
+        Tile tile = this.getQsTile();
+        boolean isActive = getServiceStatus();
+
+        Icon newIcon;
+        String newLabel;
+        int newState;
+
+        // Change the tile to match the service status.
+        if (isActive) {
+            Log.i(Constants.TAG + ": " + getClass().getSimpleName(), "SELinux - Set Enforcing");
+            newLabel = String.format(Locale.US,
+                    "%s %s",
+                    getString(R.string.tile_label),
+                    getString(R.string.service_active));
+
+            newIcon = Icon.createWithResource(getApplicationContext(),
+                    R.drawable.ic_selinux_enf);
+
+            newState = Tile.STATE_ACTIVE;
+            Control.runCommand("1", SETENFORCE, Control.CommandType.SHELL, context);
+
+        } else {
+            Log.i(Constants.TAG + ": " + getClass().getSimpleName(), "SELinux - Set Permissive");
+            newLabel = String.format(Locale.US,
+                    "%s %s",
+                    getString(R.string.tile_label),
+                    getString(R.string.service_inactive));
+
+            newIcon =
+                    Icon.createWithResource(getApplicationContext(),
+                            R.drawable.ic_selinux);
+
+            newState = Tile.STATE_INACTIVE;
             Control.runCommand("0", SETENFORCE, Control.CommandType.SHELL, context);
         }
-        else if (!isSELinuxActive() && qsTile.getState() == Tile.STATE_INACTIVE) {
-            Control.runCommand("1", SETENFORCE, Control.CommandType.SHELL, context);
-        }
-       try{
-            // Pause momentarily for sysfs changes
-            // This should be done differently, but this will work for now.
-            Thread.sleep(100);
-       }
-        catch(InterruptedException e){
 
-    }
-        tileSELinuxUpdate(qsTile);
+        // Change the UI of the tile.
+        tile.setLabel(newLabel);
+        tile.setIcon(newIcon);
+        tile.setState(newState);
+
+        // Need to call updateTile for the tile to pick up changes.
+        tile.updateTile();
     }
 
+    // Access storage to see how many times the tile
+// has been tapped.
+    private boolean getServiceStatus() {
+
+        SharedPreferences prefs =
+                getApplicationContext()
+                        .getSharedPreferences(PREFERENCES_KEY, MODE_PRIVATE);
+
+        boolean isActive = prefs.getBoolean(SERVICE_STATUS_FLAG, false);
+        isActive = !isActive;
+
+        prefs.edit().putBoolean(SERVICE_STATUS_FLAG, isActive).apply();
+
+        return isActive;
+    }
 }
+
