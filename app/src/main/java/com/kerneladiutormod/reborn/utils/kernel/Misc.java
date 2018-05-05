@@ -126,6 +126,7 @@ public class Misc implements Constants {
     public static void activateADBOverWifi(boolean active, Context context) {
         if (active) {
             Control.setProp("service.adb.tcp.port", "5555", context);
+            RootUtils.runCommand("start " + "adbd");
         }
         else {
             Control.setProp("service.adb.tcp.port", "-1", context);
