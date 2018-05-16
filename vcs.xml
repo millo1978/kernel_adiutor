@@ -66,6 +66,10 @@
           <option name="url" value="https://github.com/millo1978/wifiadbtile.git" />
           <option name="userName" value="" />
         </UrlAndUserName>
+        <UrlAndUserName>
+          <option name="url" value="https://github.com/millo1978/6thGear-RomControl-v2.0.git" />
+          <option name="userName" value="" />
+        </UrlAndUserName>
       </list>
     </option>
     <option name="cloneParentDir" value="C:\Users\aless\Desktop" />
